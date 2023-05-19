@@ -4,11 +4,9 @@ import { marked } from 'marked';
 let db;
 
 const checkIfFileExists = async (fileName) => {
-  console.log('Checking if', fileName, 'exists.');
   try {
     const root = await navigator.storage.getDirectory();
     const opfsHandle = await root.getFileHandle(fileName);
-    console.log('Yes,', fileName, 'exists.');
     await openSQLiteDatabase(opfsHandle);
   } catch (err) {
     console.log(err.name, err.message);
@@ -19,7 +17,6 @@ const checkIfFileExists = async (fileName) => {
 };
 
 const openSQLiteDatabase = async (opfsHandle) => {
-  console.log('Starting SQLite with', opfsHandle.name);
   const sqlite3 = await sqlite3InitModule({
     print: (...args) => console.log(...args),
     printErr: (...args) => console.error(...args),
@@ -29,7 +26,6 @@ const openSQLiteDatabase = async (opfsHandle) => {
 };
 
 self.addEventListener('message', async (e) => {
-  console.log('message', e.data);
   if (e.data.handle) {
     try {
       const opfsHandle = await root.getFileHandle(e.data.handle.name, {
@@ -43,7 +39,7 @@ self.addEventListener('message', async (e) => {
       self.postMessage({ error: `${err.name}: ${err.message}` });
     }
   } else if (e.data.search) {
-    await search(e.data.search, e.data.slug);
+    await search(e.data.search);
   } else if (e.data.searchRandom) {
     await searchRandom();
   } else if (e.data.checkIfFileExists) {
@@ -51,41 +47,35 @@ self.addEventListener('message', async (e) => {
   }
 });
 
+const callback = async ({ title, text, redirect }) => {
+  if (redirect) {
+    return await search(redirect, title);
+  }
+  const html = marked
+    .parse(text, {
+      mangle: false,
+      headerIds: false,
+    })
+    .replaceAll(/<img[^>]*>/g, '');
+  self.postMessage({ html, title });
+};
+
 const searchRandom = async () => {
-  const sql = `SELECT * FROM wiki_articles ORDER BY RANDOM() LIMIT 1`;
+  const sql = `SELECT * FROM wiki_articles LIMIT 1 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM wiki_articles), 1)`;
   console.log(sql);
   db.exec({
     sql,
     rowMode: 'object',
-    callback: async ({ title, text }) => {
-      const html = marked
-        .parse(text, {
-          mangle: false,
-          headerIds: false,
-        })
-        .replaceAll(/<img[^>]*>/g, '');
-      self.postMessage({ html, slug: title, query: title });
-    },
+    callback,
   });
 };
 
-const search = async (query, slug) => {
+const search = async (query) => {
   const sql = `SELECT * FROM wiki_articles WHERE title = \'${query}\' COLLATE NOCASE`;
   console.log(sql);
   db.exec({
     sql,
     rowMode: 'object',
-    callback: async ({ title, text, redirect }) => {
-      if (redirect) {
-        return await search(redirect, title);
-      }
-      const html = marked
-        .parse(text, {
-          mangle: false,
-          headerIds: false,
-        })
-        .replaceAll(/<img[^>]*>/g, '');
-      self.postMessage({ html, slug, query: title });
-    },
+    callback,
   });
 };

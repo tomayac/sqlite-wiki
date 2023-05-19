@@ -20,18 +20,18 @@ worker.addEventListener('message', async (e) => {
     if (url.pathname.length > 1) {
       search(url);
     } else {
-      span.hidden = false;
+      span.style.display = 'inline-block';
       worker.postMessage({ searchRandom: true });
     }
   } else if (e.data.showOpenFilePicker) {
     await openFile();
   } else if (e.data.html) {
     input.value = '';
-    span.hidden = true;
+    span.style.display = 'none';
     window.scrollTo(0, 0);
-    div.innerHTML = `<h2>${e.data.query}</h2>${e.data.html}`;
+    div.innerHTML = `<h2>${e.data.title}</h2>${e.data.html}`;
     const slug = encodeURIComponent(
-      e.data.slug.toLowerCase().replaceAll(/\s/g, '_'),
+      e.data.title.toLowerCase().replaceAll(/\s/g, '_'),
     );
     history.pushState(null, '', slug);
   } else if (e.data.error) {
@@ -94,11 +94,10 @@ form.addEventListener('submit', async (e) => {
 });
 
 const search = (url) => {
-  const slug = url.pathname.slice(1);
   const search = decodeURIComponent(
     url.pathname.slice(1).replaceAll(/_/g, ' '),
   );
-  worker.postMessage({ search, slug });
+  worker.postMessage({ search });
 };
 
 div.addEventListener('click', (e) => {

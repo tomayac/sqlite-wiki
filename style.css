@@ -2,3 +2,14 @@ div a:not([href^='./'])::after {
   content: ' ↥';
   color: red;
 }
+
+.dice {
+  display: none;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
