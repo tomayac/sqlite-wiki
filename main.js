@@ -1,11 +1,42 @@
+import 'simpledotcss';
 import './style.css';
-import '@picocss/pico';
 
 const startButton = document.querySelector('button');
+const form = document.querySelector('form');
+const input = document.querySelector('[type=search]');
 const div = document.querySelector('div');
+const span = document.querySelector('span');
 
 const worker = new Worker(new URL('./worker.js', import.meta.url), {
   type: 'module',
+});
+
+worker.addEventListener('message', async (e) => {
+  if (e.data.ready) {
+    localStorage.setItem('sqlite-file-name', e.data.ready);
+    form.disabled = false;
+    startButton.hidden = true;
+    const url = new URL(location.href);
+    if (url.pathname.length > 1) {
+      search(url);
+    } else {
+      span.hidden = false;
+      worker.postMessage({ searchRandom: true });
+    }
+  } else if (e.data.showOpenFilePicker) {
+    await openFile();
+  } else if (e.data.html) {
+    input.value = '';
+    span.hidden = true;
+    window.scrollTo(0, 0);
+    div.innerHTML = `<h2>${e.data.query}</h2>${e.data.html}`;
+    const slug = encodeURIComponent(
+      e.data.slug.toLowerCase().replaceAll(/\s/g, '_'),
+    );
+    history.pushState(null, '', slug);
+  } else if (e.data.error) {
+    div.innerHTML = `<pre>${e.data.error}</pre>`;
+  }
 });
 
 const openFile = async () => {
@@ -39,6 +70,7 @@ const openFile = async () => {
       handle,
     });
   } catch (err) {
+    // User gesture required for `showOpenFilePicker()`.
     if (err.name === 'SecurityError') {
       startButton.hidden = false;
       startButton.addEventListener('click', async () => {
@@ -51,19 +83,13 @@ const openFile = async () => {
   }
 };
 
-worker.addEventListener('message', async (e) => {
-  if (e.data.ready) {
-    startButton.hidden = true;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  let query = input.value.trim();
+  if (query.length) {
     const url = new URL(location.href);
-    if (url.pathname) {
-      search(url);
-    }
-  } else if (e.data.showOpenFilePicker) {
-    await openFile();
-  } else if (e.data.html) {
-    window.scrollTo(0, 0);
-    div.innerHTML = `<h1>${e.data.query}</h1>${e.data.html}`;
-    history.pushState(null, '', e.data.slug);
+    url.pathname = query.replaceAll(/\s+/g, '_');
+    search(url);
   }
 });
 
@@ -85,3 +111,10 @@ div.addEventListener('click', (e) => {
     }
   }
 });
+
+const sqliteFileName = localStorage.getItem('sqlite-file-name');
+if (sqliteFileName) {
+  worker.postMessage({ checkIfFileExists: sqliteFileName });
+} else {
+  await openFile();
+}

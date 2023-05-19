@@ -1,64 +1,91 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import { marked } from 'marked';
 
-const FILE_NAME = 'enwikiquote.db';
-
 let db;
 
-(async () => {
-  const root = await navigator.storage.getDirectory();
+const checkIfFileExists = async (fileName) => {
+  console.log('Checking if', fileName, 'exists.');
+  try {
+    const root = await navigator.storage.getDirectory();
+    const opfsHandle = await root.getFileHandle(fileName);
+    console.log('Yes,', fileName, 'exists.');
+    await openSQLiteDatabase(opfsHandle);
+  } catch (err) {
+    console.log(err.name, err.message);
+    if (err.name === 'NotFoundError') {
+      self.postMessage({ showOpenFilePicker: true });
+    }
+  }
+};
 
+const openSQLiteDatabase = async (opfsHandle) => {
+  console.log('Starting SQLite with', opfsHandle.name);
   const sqlite3 = await sqlite3InitModule({
     print: (...args) => console.log(...args),
     printErr: (...args) => console.error(...args),
   });
+  db = new sqlite3.oo1.OpfsDb(opfsHandle.name);
+  self.postMessage({ ready: opfsHandle.name });
+};
 
-  self.addEventListener('message', async (e) => {
-    if (e.data.handle) {
-      const opfsHandle = await root.getFileHandle(FILE_NAME, { create: true });
+self.addEventListener('message', async (e) => {
+  console.log('message', e.data);
+  if (e.data.handle) {
+    try {
+      const opfsHandle = await root.getFileHandle(e.data.handle.name, {
+        create: true,
+      });
       const writable = await opfsHandle.createWritable();
       const file = await e.data.handle.getFile();
       await file.stream().pipeTo(writable);
-      await checkIfFileExists();
-    } else if (e.data.search) {
-      await search(e.data.search, e.data.slug);
-    }
-  });
-
-  const openSQLiteDatabase = async (opfsHandle) => {
-    console.log('Starting SQLite with', opfsHandle.name);
-    db = new sqlite3.oo1.OpfsDb(opfsHandle.name);
-    self.postMessage({ ready: true });
-  };
-
-  const search = async (query, slug) => {
-    console.log(`SELECT * FROM wiki_articles WHERE title = \'${query}\'`);
-    db.exec({
-      sql: `SELECT * FROM wiki_articles WHERE title = \'${query}\'`,
-      rowMode: 'object',
-      callback: ({ text }) => {
-        const html = marked
-          .parse(text, {
-            mangle: false,
-            headerIds: false,
-          })
-          .replaceAll(/<img[^>]*>/g, '');
-        self.postMessage({ html, slug, query });
-      },
-    });
-  };
-
-  const checkIfFileExists = async () => {
-    console.log('Checking if', FILE_NAME, 'exists.');
-    try {
-      const opfsHandle = await root.getFileHandle(FILE_NAME);
-      console.log('Yes,', FILE_NAME, 'exists.');
-      await openSQLiteDatabase(opfsHandle);
+      await checkIfFileExists(e.data.handle.name);
     } catch (err) {
-      if (err.name === 'NotFoundError') {
-        self.postMessage({ showOpenFilePicker: FILE_NAME });
-      }
+      self.postMessage({ error: `${err.name}: ${err.message}` });
     }
-  };
-  await checkIfFileExists(FILE_NAME);
-})();
+  } else if (e.data.search) {
+    await search(e.data.search, e.data.slug);
+  } else if (e.data.searchRandom) {
+    await searchRandom();
+  } else if (e.data.checkIfFileExists) {
+    await checkIfFileExists(e.data.checkIfFileExists);
+  }
+});
+
+const searchRandom = async () => {
+  const sql = `SELECT * FROM wiki_articles ORDER BY RANDOM() LIMIT 1`;
+  console.log(sql);
+  db.exec({
+    sql,
+    rowMode: 'object',
+    callback: async ({ title, text }) => {
+      const html = marked
+        .parse(text, {
+          mangle: false,
+          headerIds: false,
+        })
+        .replaceAll(/<img[^>]*>/g, '');
+      self.postMessage({ html, slug: title, query: title });
+    },
+  });
+};
+
+const search = async (query, slug) => {
+  const sql = `SELECT * FROM wiki_articles WHERE title = \'${query}\' COLLATE NOCASE`;
+  console.log(sql);
+  db.exec({
+    sql,
+    rowMode: 'object',
+    callback: async ({ title, text, redirect }) => {
+      if (redirect) {
+        return await search(redirect, title);
+      }
+      const html = marked
+        .parse(text, {
+          mangle: false,
+          headerIds: false,
+        })
+        .replaceAll(/<img[^>]*>/g, '');
+      self.postMessage({ html, slug, query: title });
+    },
+  });
+};

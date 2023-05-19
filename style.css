@@ -1,4 +1,4 @@
-a:not([href^='./'])::after {
+div a:not([href^='./'])::after {
   content: ' ↥';
   color: red;
 }

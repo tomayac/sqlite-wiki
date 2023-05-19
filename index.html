@@ -2,20 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>"
+    />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
     <title>SQLite Wiki</title>
+    <base href="." />
   </head>
   <body>
-    <button hidden type="button">Start</button>
     <script type="module" src="/main.js"></script>
-    <div></div>
-    <footer>
-      Dataset via
-      <a
-        href="https://www.kaggle.com/datasets/segfall/markdownlike-wikipedia-dumps-in-sqlite"
-        >Kaggle</a
-      >.
-    </footer>
+    <main class="container">
+      <h1>
+        <a href="."
+          ><img
+            src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>"
+            alt=""
+            width="30"
+            height="30"
+          />
+          SQLite Wiki</a
+        >
+      </h1>
+      <button hidden type="button">Select SQLite database</button>
+      <form disabled>
+        <label
+          >Enter a search query:
+          <input type="search" name="query" placeholder="Albert Einstein"
+        /></label>
+        <input type="submit" value="Search" />
+      </form>
+      <span hidden>🎲</span>
+      <div></div>
+      <footer>
+        Dataset via
+        <a
+          href="https://www.kaggle.com/datasets/segfall/markdownlike-wikipedia-dumps-in-sqlite"
+          >Kaggle</a
+        >.
+      </footer>
+    </main>
   </body>
 </html>

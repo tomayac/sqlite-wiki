@@ -14,9 +14,9 @@
     "vite": "^4.3.8"
   },
   "dependencies": {
-    "@picocss/pico": "^1.5.10",
     "@sqlite.org/sqlite-wasm": "^3.41.2-build13",
     "marked": "^5.0.2",
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "simpledotcss": "^2.2.1"
   }
 }
