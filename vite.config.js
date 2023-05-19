@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/sqlite-wiki/',
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
