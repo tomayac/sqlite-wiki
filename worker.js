@@ -28,6 +28,7 @@ const openSQLiteDatabase = async (opfsHandle) => {
 self.addEventListener('message', async (e) => {
   if (e.data.handle) {
     try {
+      const root = await navigator.storage.getDirectory();
       const opfsHandle = await root.getFileHandle(e.data.handle.name, {
         create: true,
       });
