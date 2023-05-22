@@ -2,8 +2,10 @@ import 'simpledotcss';
 import './style.css';
 
 const startButton = document.querySelector('button');
+const submitButton = document.querySelector('[type=submit]');
 const form = document.querySelector('form');
 const input = document.querySelector('[type=search]');
+const datalist = document.querySelector('datalist');
 const div = document.querySelector('div');
 const span = document.querySelector('span');
 
@@ -25,8 +27,20 @@ worker.addEventListener('message', async (e) => {
     }
   } else if (e.data.showOpenFilePicker) {
     await openFile();
+  } else if (e.data.titleSearch) {
+    const options = datalist.querySelectorAll('option');
+    for (const option of options) {
+      if (option.value === e.data.titleSearch) {
+        return;
+      }
+    }
+    const option = document.createElement('option');
+    option.textContent = e.data.titleSearch;
+    option.value = e.data.titleSearch;
+    datalist.append(option);
   } else if (e.data.html) {
     input.value = '';
+    datalist.innerHTML = '';
     span.style.display = 'none';
     window.scrollTo(0, 0);
     div.innerHTML = `<h2>${e.data.title}</h2>${e.data.html}`;
@@ -86,11 +100,27 @@ const openFile = async () => {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   let query = input.value.trim();
-  if (query.length) {
+  if (query) {
     const url = new URL(location.href);
     url.pathname = query.replaceAll(/\s+/g, '_');
     search(url);
   }
+});
+
+input.addEventListener('input', async () => {
+  span.style.display = 'none';
+  let query = input.value.trim();
+  const options = datalist.querySelectorAll('option');
+  for (const option of options) {
+    console.log(query, option.value);
+    if (query === option.value) {
+      return submitButton.click();
+    }
+  }
+  if (query.length > 3) {
+    return worker.postMessage({ query });
+  }
+  datalist.innerHTML = '';
 });
 
 const search = (url) => {

@@ -1,6 +1,13 @@
 div a:not([href^='./'])::after {
-  content: ' ↥';
+  content: '↥';
+  padding-inline-start: 0.25rem;
   color: red;
+}
+
+div a[href^='./']::after {
+  content: '↧';
+  padding-inline-start: 0.25rem;
+  color: greenyellow;
 }
 
 .dice {

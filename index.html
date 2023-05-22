@@ -29,8 +29,13 @@
       <form disabled>
         <label
           >Enter a search query:
-          <input type="search" name="query" placeholder="Albert Einstein"
-        /></label>
+          <input
+            type="search"
+            autocomplete="off"
+            name="query"
+            placeholder="Albert Einstein"
+            list="autocomplete" /><datalist id="autocomplete"></datalist
+        ></label>
         <input type="submit" value="Search" />
       </form>
       <span class="dice">🎲</span>

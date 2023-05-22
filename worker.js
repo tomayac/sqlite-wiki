@@ -40,6 +40,8 @@ self.addEventListener('message', async (e) => {
     }
   } else if (e.data.search) {
     await search(e.data.search);
+  } else if (e.data.query) {
+    await searchFuzzy(e.data.query);
   } else if (e.data.searchRandom) {
     await searchRandom();
   } else if (e.data.checkIfFileExists) {
@@ -61,7 +63,7 @@ const callback = async ({ title, text, redirect }) => {
 };
 
 const searchRandom = async () => {
-  const sql = `SELECT * FROM wiki_articles LIMIT 1 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM wiki_articles), 1)`;
+  const sql = `SELECT * FROM wiki_articles WHERE redirect IS NULL LIMIT 1 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM wiki_articles WHERE redirect IS NULL), 1)`;
   console.log(sql);
   db.exec({
     sql,
@@ -77,5 +79,17 @@ const search = async (query) => {
     sql,
     rowMode: 'object',
     callback,
+  });
+};
+
+const searchFuzzy = async (query) => {
+  const sql = `SELECT title FROM wiki_articles WHERE title LIKE \'%${query}%\' COLLATE NOCASE`;
+  console.log(sql);
+  db.exec({
+    sql,
+    rowMode: 'object',
+    callback: ({ title }) => {
+      self.postMessage({ titleSearch: title });
+    },
   });
 };
