@@ -36,6 +36,16 @@
             placeholder="Albert Einstein"
             list="autocomplete" /><datalist id="autocomplete"></datalist
         ></label>
+        <fieldset hidden>
+          <legend>Where to search:</legend>
+          <label
+            ><input type="radio" name="search-where" value="title" checked />
+            Title</label
+          >
+          <label
+            ><input type="radio" name="search-where" value="text" /> Text</label
+          >
+        </fieldset>
         <input type="submit" value="Search" />
       </form>
       <span class="dice">🎲</span>

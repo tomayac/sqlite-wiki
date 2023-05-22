@@ -5,6 +5,7 @@ const startButton = document.querySelector('button');
 const submitButton = document.querySelector('[type=submit]');
 const form = document.querySelector('form');
 const input = document.querySelector('[type=search]');
+const where = document.querySelector('[value=title]');
 const datalist = document.querySelector('datalist');
 const div = document.querySelector('div');
 const span = document.querySelector('span');
@@ -107,26 +108,43 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-input.addEventListener('input', async () => {
-  span.style.display = 'none';
-  let query = input.value.trim();
-  const options = datalist.querySelectorAll('option');
-  for (const option of options) {
-    if (query === option.value) {
-      return submitButton.click();
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+input.addEventListener(
+  'input',
+  debounce(async () => {
+    span.style.display = 'none';
+    let query = input.value.trim();
+    const options = datalist.querySelectorAll('option');
+    for (const option of options) {
+      if (query === option.value) {
+        return submitButton.click();
+      }
     }
-  }
-  if (query.length > 3) {
-    return worker.postMessage({ query });
-  }
-  datalist.innerHTML = '';
-});
+    if (query.length > 3) {
+      const what = where.checked ? 'title' : 'text';
+      return worker.postMessage({ query, what });
+    }
+    datalist.innerHTML = '';
+  }, 750),
+);
 
 const search = (url) => {
   const search = decodeURIComponent(
     url.pathname.slice(1).replaceAll(/_/g, ' '),
   );
-  worker.postMessage({ search });
+  const what = where.checked ? 'title' : 'text';
+  worker.postMessage({ search, what });
 };
 
 div.addEventListener('click', (e) => {

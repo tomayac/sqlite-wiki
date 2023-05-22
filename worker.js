@@ -40,9 +40,9 @@ self.addEventListener('message', async (e) => {
       self.postMessage({ error: `${err.name}: ${err.message}` });
     }
   } else if (e.data.search) {
-    await search(e.data.search);
+    await search(e.data.search, e.data.what);
   } else if (e.data.query) {
-    await searchFuzzy(e.data.query);
+    await searchFuzzy(e.data.query, e.data.what);
   } else if (e.data.searchRandom) {
     await searchRandom();
   } else if (e.data.checkIfFileExists) {
@@ -50,43 +50,54 @@ self.addEventListener('message', async (e) => {
   }
 });
 
-const callback = async ({ title, text, redirect }) => {
-  if (redirect) {
-    return await search(redirect, title);
-  }
-  const html = marked
-    .parse(text, {
-      mangle: false,
-      headerIds: false,
-    })
-    .replaceAll(/<img[^>]*>/g, '');
-  self.postMessage({ html, title });
-};
-
 const searchRandom = async () => {
   const sql = `SELECT * FROM wiki_articles WHERE redirect IS NULL LIMIT 1 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM wiki_articles WHERE redirect IS NULL), 1)`;
   console.log(sql);
   db.exec({
     sql,
     rowMode: 'object',
-    callback,
+    callback: async ({ title, text }) => {
+      const html = marked
+        .parse(text, {
+          mangle: false,
+          headerIds: false,
+        })
+        .replaceAll(/<img[^>]*>/g, '');
+      self.postMessage({ html, title });
+    },
   });
 };
 
-const search = async (query) => {
+const search = async (query, what) => {
   query = query.replaceAll(/'/g, `''`);
-  const sql = `SELECT * FROM wiki_articles WHERE title = \'${query}\' COLLATE NOCASE`;
+  if (what === 'text') {
+    query = `%${query}%`;
+  }
+  const sql = `SELECT * FROM wiki_articles WHERE ${what} ${
+    what === 'text' ? 'LIKE' : '='
+  } \'${query}\' COLLATE NOCASE`;
   console.log(sql);
   db.exec({
     sql,
     rowMode: 'object',
-    callback,
+    callback: async ({ title, text, redirect }) => {
+      if (redirect) {
+        return await search(redirect, what);
+      }
+      const html = marked
+        .parse(text, {
+          mangle: false,
+          headerIds: false,
+        })
+        .replaceAll(/<img[^>]*>/g, '');
+      self.postMessage({ html, title });
+    },
   });
 };
 
-const searchFuzzy = async (query) => {
+const searchFuzzy = async (query, what) => {
   query = query.replaceAll(/'/g, `''`);
-  const sql = `SELECT title FROM wiki_articles WHERE title LIKE \'%${query}%\' COLLATE NOCASE`;
+  const sql = `SELECT title FROM wiki_articles WHERE ${what} LIKE \'%${query}%\' COLLATE NOCASE ORDER BY title`;
   console.log(sql);
   db.exec({
     sql,
