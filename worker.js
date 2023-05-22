@@ -73,6 +73,7 @@ const searchRandom = async () => {
 };
 
 const search = async (query) => {
+  query = query.replaceAll(/'/g, `''`);
   const sql = `SELECT * FROM wiki_articles WHERE title = \'${query}\' COLLATE NOCASE`;
   console.log(sql);
   db.exec({
@@ -83,6 +84,7 @@ const search = async (query) => {
 };
 
 const searchFuzzy = async (query) => {
+  query = query.replaceAll(/'/g, `''`);
   const sql = `SELECT title FROM wiki_articles WHERE title LIKE \'%${query}%\' COLLATE NOCASE`;
   console.log(sql);
   db.exec({

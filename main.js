@@ -112,7 +112,6 @@ input.addEventListener('input', async () => {
   let query = input.value.trim();
   const options = datalist.querySelectorAll('option');
   for (const option of options) {
-    console.log(query, option.value);
     if (query === option.value) {
       return submitButton.click();
     }
@@ -134,6 +133,12 @@ div.addEventListener('click', (e) => {
   const anchor = e.target.closest('a');
   if (anchor) {
     const url = new URL(anchor.href);
+    if (url.hash) {
+      e.preventDefault();
+      document.querySelector(url.hash)?.scrollIntoView();
+      return;
+      3;
+    }
     if (url.origin === location.origin) {
       e.preventDefault();
       search(url);
