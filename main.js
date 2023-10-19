@@ -170,3 +170,12 @@ if (sqliteFileName) {
 } else {
   await openFile();
 }
+
+window.addEventListener('popstate', (e) => {
+  const url = new URL(location.href);
+  if (url.pathname.length > 1) {
+    search(url);
+    return;
+  }
+  location.reload();
+});

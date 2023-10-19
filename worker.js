@@ -50,6 +50,16 @@ self.addEventListener('message', async (e) => {
   }
 });
 
+const extractHTML = (text) => {
+  return marked
+  .parse(text, {
+    mangle: false,
+    headerIds: false,
+  })
+  .replaceAll(/<img[^>]*>/g, '')
+  .replaceAll('..wikipedia.org', '.wikipedia.org');
+};
+
 const searchRandom = async () => {
   const sql = `SELECT * FROM wiki_articles WHERE redirect IS NULL LIMIT 1 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM wiki_articles WHERE redirect IS NULL), 1)`;
   console.log(sql);
@@ -57,12 +67,7 @@ const searchRandom = async () => {
     sql,
     rowMode: 'object',
     callback: async ({ title, text }) => {
-      const html = marked
-        .parse(text, {
-          mangle: false,
-          headerIds: false,
-        })
-        .replaceAll(/<img[^>]*>/g, '');
+      const html = extractHTML(text);
       self.postMessage({ html, title });
     },
   });
@@ -84,12 +89,7 @@ const search = async (query, what) => {
       if (redirect) {
         return await search(redirect, what);
       }
-      const html = marked
-        .parse(text, {
-          mangle: false,
-          headerIds: false,
-        })
-        .replaceAll(/<img[^>]*>/g, '');
+      const html = extractHTML(text);
       self.postMessage({ html, title });
     },
   });
