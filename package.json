@@ -15,12 +15,12 @@
     "node": ">=16"
   },
   "devDependencies": {
-    "vite": "^4.3.8"
+    "vite": "^4.5.0"
   },
   "dependencies": {
-    "@sqlite.org/sqlite-wasm": "^3.42.0-build1",
-    "marked": "^5.0.2",
-    "prettier": "^2.8.8",
+    "@sqlite.org/sqlite-wasm": "^3.43.2-build1",
+    "marked": "^9.1.2",
+    "prettier": "^3.0.3",
     "simpledotcss": "^2.2.1"
   }
 }
