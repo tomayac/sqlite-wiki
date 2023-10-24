@@ -91,7 +91,9 @@ const openFile = async () => {
       startButton.addEventListener('click', async () => {
         await openFile();
       });
-    } else if (err.name === 'AbortError') {
+      return;
+    }
+    if (err.name === 'AbortError') {
       return;
     }
     console.error(err.name, err.message);
